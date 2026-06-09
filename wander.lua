@@ -533,4 +533,73 @@ game:GetService("Players").LocalPlayer.Idled:Connect(function()
     vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
     task.wait(1)
     vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+end)repeat task.wait() until game:IsLoaded()
+local P, R, T, S, V = game:GetService("Players"), game:GetService("RunService"), game:GetService("TextChatService"), game:GetService("StarterGui"), game:GetService("VirtualInputManager")
+local L = P.LocalPlayer
+local E, TG, BV, AngryMode = false, nil, nil, false
+local AngryTime, AngryDelay = 0, 6
+
+local function Setup()
+    local C = L.Character
+    local H = C and C:FindFirstChild("HumanoidRootPart")
+    if not H then return end
+    if BV then BV:Destroy() end
+    BV = Instance.new("BodyVelocity", H)
+    BV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+end
+
+local function GetTarget()
+    local list = {}
+    for _, p in pairs(P:GetPlayers()) do
+        if p ~= L and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then table.insert(list, p) end
+    end
+    return #list > 0 and list[math.random(1, #list)] or nil
+end
+
+T.MessageReceived:Connect(function(m)
+    local msg = m.Text:lower()
+    if msg == ";wander angry" then
+        AngryMode, E = true, true
+        TG = GetTarget()
+        AngryTime = tick()
+        Setup()
+    elseif msg == ";wander unrage" then
+        E, TG, AngryMode = false, nil, false
+        if BV then BV:Destroy(); BV = nil end
+    end
+end)
+
+R.Heartbeat:Connect(function()
+    if not E or not TG or not BV then return end
+    local hum = L.Character and L.Character:FindFirstChildOfClass("Humanoid")
+    local hrp, tr = L.Character and L.Character:FindFirstChild("HumanoidRootPart"), TG.Character and TG.Character:FindFirstChild("HumanoidRootPart")
+    
+    if not hrp or not tr then return end
+    
+    -- Anti-Stun bay lên
+    if hum and hum.JumpPower == 0 then BV.Velocity = Vector3.new(0, 500, 0) return end
+    
+    -- Angry 6s & Orbit
+    if AngryMode and (tick() - AngryTime >= AngryDelay or not TG.Character) then
+        TG = GetTarget()
+        AngryTime = tick()
+    end
+    
+    local offset = Vector3.new(math.cos(tick() * 6) * 12, 4, math.sin(tick() * 6) * 12)
+    local dir = (tr.Position + offset) - hrp.Position
+    BV.Velocity = dir.Magnitude > 2 and dir.Unit * 300 or Vector3.zero
+    hrp.CFrame = CFrame.lookAt(hrp.Position, tr.Position)
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if E and TG then
+            local r1, r2 = L.Character and L.Character:FindFirstChild("HumanoidRootPart"), TG.Character and TG.Character:FindFirstChild("HumanoidRootPart")
+            if r1 and r2 and (r1.Position - r2.Position).Magnitude < 30 then
+                game:GetService("ReplicatedStorage").CombatRemote:FireServer("M1")
+                game:GetService("ReplicatedStorage").CombatRemote:FireServer("Kick")
+            end
+        end
+    end
 end)

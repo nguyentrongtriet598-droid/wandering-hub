@@ -189,38 +189,30 @@ task.spawn(function() while task.wait(0.1) do local h = Player.Character and Pla
 task.spawn(function() while true do RunService.Heartbeat:Wait(); if IsAutoClick and CombatRemote then pcall(function() pcall(function() CombatRemote:FireServer("Block", true); ActionRemote:FireServer("Block", true) end); RunService.RenderStepped:Wait(); pcall(function() CombatRemote:FireServer("Block", false); ActionRemote:FireServer("Block", false) end); for i = 1, 4 do CombatRemote:FireServer("M1"); CombatRemote:FireServer("M2") end; CombatRemote:FireServer("Kick"); pcall(function() ActionRemote:FireServer("Kick") end); task.wait(0.02) end) end end end)
 task.spawn(function() while true do if SpamEActive then VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game); task.wait(1); VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game); task.wait(0.1) end; task.wait(0.1) end end)
 
-local offset = 10 
-local directions = {Vector3.new(offset, 0, 0), Vector3.new(-offset, 0, 0), Vector3.new(0, 0, offset), Vector3.new(0, 0, -offset)}
-local idx = 1
-
---// ANTI-STUN ĐÃ CHỈNH: ĐẨY THẤP (2) VÀ VẬN TỐC RƠI (-3500)
+--// ANTI-STUN VÀ TELEPORT BÁM DÍNH (Đã fix Y=6 và chống rơi void)
 RunService.Heartbeat:Connect(function()
     local c = Player.Character; local r = c and c:FindFirstChild("HumanoidRootPart"); local h = c and c:FindFirstChildOfClass("Humanoid")
     if not c or not r or not h then return end
     
+    -- Anti-Stun: Ép đứng dậy và chặn rơi khỏi map
     if (h.JumpPower == 0 or h:GetState() == Enum.HumanoidStateType.Ragdoll or h:GetState() == Enum.HumanoidStateType.Physics) then
         h:ChangeState(Enum.HumanoidStateType.GettingUp)
-        r.AssemblyLinearVelocity = Vector3.new(0, 2, 0)
-        task.delay(0.04, function()
-            if r then r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, -3500, r.AssemblyLinearVelocity.Z) end
-        end)
+        if r.Position.Y < 6 then
+            r.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        else
+            r.AssemblyLinearVelocity = Vector3.new(0, -100, 0)
+        end
     end
 
+    -- Teleport bám dính mục tiêu
     local s = inT.Text:lower(); local target = nil
     if s ~= "" and s ~= "nhập tên..." then for _, p in pairs(game.Players:GetPlayers()) do if p ~= Player and (p.Name:lower():find(s) or p.DisplayName:lower():find(s)) then target = p.Character; break end end end
     
     if (IsTelePro and target and r and h) then
         local tHRP = target:FindFirstChild("HumanoidRootPart")
         if tHRP then
-            local dist = (tHRP.Position - r.Position).Magnitude
-            if dist > 15 then
-                h:ChangeState(Enum.HumanoidStateType.Physics)
-                r.AssemblyLinearVelocity = (tHRP.Position - r.Position).Unit * 150
-            else
-                local targetPos = tHRP.CFrame * CFrame.new(directions[idx])
-                r.CFrame = CFrame.new(targetPos.Position, tHRP.Position)
-                idx = (idx % 4) + 1
-            end
+            r.CFrame = tHRP.CFrame * CFrame.new(0, 0, 1.5)
+            r.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         end
     end
 end)

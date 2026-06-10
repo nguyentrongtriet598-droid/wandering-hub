@@ -15,7 +15,7 @@ local SpawnTime = tick()
 --// GIAO DIỆN
 local SG = Instance.new("ScreenGui", game.CoreGui)
 local Toggle = Instance.new("TextButton", SG); Toggle.Size = UDim2.new(0, 45, 0, 45); Toggle.Position = UDim2.new(0, 10, 0.5, -22); Toggle.Text = "W"; Toggle.BackgroundColor3 = Color3.fromRGB(30, 30, 30); Toggle.TextColor3 = Color3.new(1, 1, 1); Instance.new("UICorner", Toggle).CornerRadius = UDim.new(1, 0)
-local Main = --// HỆ THỐNG MẬT KHẨU
+local Main =--// HỆ THỐNG MẬT KHẨU
 local Password = "YourSecretPassword" -- wandering
 local KeyGui = Instance.new("Frame", SG)
 KeyGui.Size = UDim2.new(0, 200, 0, 100); KeyGui.Position = UDim2.new(0.5, -100, 0.5, -50)

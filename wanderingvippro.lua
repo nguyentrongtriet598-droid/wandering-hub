@@ -47,7 +47,7 @@ Toggle.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
 
 UIS.JumpRequest:Connect(function() if IsInfJump and Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then Player.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping) end end)
 
---// ĐÃ CẬP NHẬT: Logic bám mượt (Lerp) và tốc độ xoay 260
+--// CẬP NHẬT: Bám bằng vận tốc 245 (không Teleport), mượt và loạn
 RunService.Stepped:Connect(function() 
     local c = Player.Character; if not c or not c:FindFirstChild("HumanoidRootPart") then return end
     local hrp = c.HumanoidRootPart; local s = inT.Text:lower(); local t = nil
@@ -56,20 +56,25 @@ RunService.Stepped:Connect(function()
     if s ~= "" and s ~= "nhập tên..." then for _, p in pairs(game.Players:GetPlayers()) do if p ~= Player and (p.Name:lower():find(s) or p.DisplayName:lower():find(s)) then t = p; break end end end
     
     if IsTelePro and t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then 
-        local thrp = t.Character.HumanoidRootPart; local targetCF
+        local thrp = t.Character.HumanoidRootPart; local targetPos
         
-        if BMode == 1 then -- Loạn
-            targetCF = thrp.CFrame * CFrame.new(math.random(-13,13)+OX, math.random(0,10)+OY, math.random(-13,13)+OZ)
+        if BMode == 1 then -- Loạn cực đại
+            targetPos = thrp.Position + Vector3.new(math.random(-30,30)+OX, math.random(-15,15)+OY, math.random(-30,30)+OZ)
         elseif BMode == 2 then -- Lơ lửng
-            targetCF = thrp.CFrame * CFrame.new(OX, 5 + OY, OZ)
-        else -- Xoay tròn nhanh (tốc độ 6)
+            targetPos = thrp.Position + Vector3.new(OX, 5 + OY, OZ)
+        else -- Xoay tròn mượt
             local time = tick() * 6 
-            targetCF = thrp.CFrame * CFrame.new(math.sin(time)*7 + OX, OY, math.cos(time)*7 + OZ)
+            targetPos = thrp.Position + Vector3.new(math.sin(time)*7 + OX, OY, math.cos(time)*7 + OZ)
         end
         
-        -- Dùng Lerp với hệ số 0.25 để mượt và nhanh như video
-        hrp.CFrame = hrp.CFrame:Lerp(targetCF, 0.25)
-        hrp.AssemblyLinearVelocity = Vector3.zero 
+        -- Bám bằng vận tốc vật lý 245
+        local direction = (targetPos - hrp.Position)
+        if direction.Magnitude > 2 then
+            hrp.AssemblyLinearVelocity = direction.Unit * 245
+        else
+            hrp.AssemblyLinearVelocity = Vector3.zero
+        end
+        hrp.CFrame = CFrame.new(hrp.Position, Vector3.new(thrp.Position.X, hrp.Position.Y, thrp.Position.Z))
     end
     
     if AutoFarmActive then local hum = c:FindFirstChildOfClass("Humanoid"); local hunger = c:FindFirstChild("Hunger") if hunger and hum and hunger.Value <= 0 and hum.Health > 0 and not IsForceRespawn then IsForceRespawn = true; hum.Health = 0 end end 

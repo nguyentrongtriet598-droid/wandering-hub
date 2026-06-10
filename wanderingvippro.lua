@@ -1,4 +1,4 @@
-local Player = game.Players.LocalPlayer
+Local Player = game.Players.LocalPlayer
 local RS, RunService, UIS = game:GetService("ReplicatedStorage"), game:GetService("RunService"), game:GetService("UserInputService")
 local VIM = game:GetService("VirtualInputManager")
 local CombatRemote = RS:FindFirstChild("CombatRemote")
@@ -15,33 +15,7 @@ local SpawnTime = tick()
 --// GIAO DIỆN
 local SG = Instance.new("ScreenGui", game.CoreGui)
 local Toggle = Instance.new("TextButton", SG); Toggle.Size = UDim2.new(0, 45, 0, 45); Toggle.Position = UDim2.new(0, 10, 0.5, -22); Toggle.Text = "W"; Toggle.BackgroundColor3 = Color3.fromRGB(30, 30, 30); Toggle.TextColor3 = Color3.new(1, 1, 1); Instance.new("UICorner", Toggle).CornerRadius = UDim.new(1, 0)
-local Main = --// HỆ THỐNG MẬT KHẨU
-local Password = "wander" -- wandering
-local KeyGui = Instance.new("Frame", SG)
-KeyGui.Size = UDim2.new(0, 200, 0, 100); KeyGui.Position = UDim2.new(0.5, -100, 0.5, -50)
-KeyGui.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Instance.new("UICorner", KeyGui)
-
-local KeyInput = Instance.new("TextBox", KeyGui)
-KeyInput.Size = UDim2.new(0, 180, 0, 30); KeyInput.Position = UDim2.new(0, 10, 0, 20)
-KeyInput.PlaceholderText = "Nhập mật khẩu..."; KeyInput.Text = ""
-
-local CheckBtn = Instance.new("TextButton", KeyGui)
-CheckBtn.Size = UDim2.new(0, 180, 0, 30); CheckBtn.Position = UDim2.new(0, 10, 0, 60)
-CheckBtn.Text = "XÁC NHẬN"; CheckBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
-
-CheckBtn.MouseButton1Click:Connect(function()
-    if KeyInput.Text == Password then
-        KeyGui:Destroy() -- Xóa khung nhập mật khẩu
-        Main.Visible = true -- Hiện menu chính
-    else
-        KeyInput.Text = "Sai mật khẩu!"
-        task.wait(1)
-        KeyInput.Text = ""
-    end
-end)
-
--- Nhớ chỉnh Main.Visible = false (đã có trong code gốc của bạn)
-Instance.new("Frame", SG); Main.Size = UDim2.new(0, 260, 0, 400); Main.Position = UDim2.new(0.5, -130, 0.5, -200); Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.Visible = false; Main.Active = true; Main.Draggable = true; Instance.new("UICorner", Main)
+local Main = Instance.new("Frame", SG); Main.Size = UDim2.new(0, 260, 0, 400); Main.Position = UDim2.new(0.5, -130, 0.5, -200); Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.Visible = false; Main.Active = true; Main.Draggable = true; Instance.new("UICorner", Main)
 local Title = Instance.new("TextLabel", Main); Title.Size = UDim2.new(1, 0, 0, 34); Title.Text = "WANDERING VIP"; Title.BackgroundTransparency = 1; Title.TextColor3 = Color3.fromRGB(212, 175, 55); Title.Font = Enum.Font.GothamBlack; Title.TextSize = 22
 
 local Tabs, Frames = {}, {}
@@ -244,8 +218,8 @@ R.Heartbeat:Connect(function()
 			BV.Velocity=Vector3.zero
 			H.CFrame=TR.CFrame*CFrame.new(
 				math.cos(tick()*220)*10,
-				math.sin(tick()*150)*5,
-				math.sin(tick()*220)*10
+				math.sin(tick()*150)*5
+				math.sin(tic
 			)
 		end
 	end

@@ -1,11 +1,12 @@
-Local Player = game.Players.LocalPlayer
+local Player = game.Players.LocalPlayer
 local RS, RunService, UIS = game:GetService("ReplicatedStorage"), game:GetService("RunService"), game:GetService("UserInputService")
 local VIM = game:GetService("VirtualInputManager")
 local CombatRemote = RS:FindFirstChild("CombatRemote")
 local ActionRemote = RS:FindFirstChild("ActionRemote")
 
 local IsTelePro, IsNoclip, IsInfJump, IsSpeedHack, IsAutoClick = false, false, true, true, false
-local IsAntiStun = false; local NoclipTimer = 0; local OX, OY, OZ = 0, 10, 0; local CurrentWS = 120
+local IsAntiStun = false; -- ĐÃ CHỈNH: Mặc định là false
+local NoclipTimer = 0; local OX, OY, OZ = 0, 10, 0; local CurrentWS = 120
 local IsHitboxAll, HBS, IgnoreList = true, 28, {}
 local AutoFarmActive, SpamEActive = false, false
 local TargetPos = Vector3.new(518.2, 4.2, 150.2); local Speed = 300; local IsForceRespawn = false
@@ -48,7 +49,7 @@ Toggle.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
 
 UIS.JumpRequest:Connect(function() if IsInfJump and Player.Character and Player.Character:FindFirstChildOfClass("Humanoid") then Player.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping) end end)
 
---// ĐÃ CẬP NHẬT: Tốc độ bám 260
+--// CẬP NHẬT: Tốc độ bám 260
 RunService.Stepped:Connect(function() 
     local c = Player.Character; if not c or not c:FindFirstChild("HumanoidRootPart") or not c:FindFirstChildOfClass("Humanoid") then return end
     local hrp = c.HumanoidRootPart; local hum = c:FindFirstChildOfClass("Humanoid"); local s = inT.Text:lower(); local t = nil
@@ -66,11 +67,12 @@ RunService.Stepped:Connect(function()
         else local time = tick() * 6; targetPos = thrp.Position + Vector3.new(math.sin(time)*7 + OX, OY, math.cos(time)*7 + OZ) end
         
         local direction = (targetPos - hrp.Position)
-        if direction.Magnitude > 2 then hrp.AssemblyLinearVelocity = direction.Unit * 260 -- Tốc độ đã tăng lên 260
+        if direction.Magnitude > 2 then hrp.AssemblyLinearVelocity = direction.Unit * 260 
         else hrp.AssemblyLinearVelocity = Vector3.zero end
         hrp.CFrame = CFrame.new(hrp.Position, Vector3.new(thrp.Position.X, hrp.Position.Y, thrp.Position.Z))
     elseif isStunned and IsTelePro and not recentlySpawned then
-        hrp.AssemblyLinearVelocity = Vector3.new(math.random(-500, 500), 200, math.random(-500, 500))
+        -- Anti-Stun tự phát đẩy nếu bị stun và đã quá 3s sau khi spawn
+        if IsAntiStun then hrp.AssemblyLinearVelocity = Vector3.new(math.random(-500, 500), 200, math.random(-500, 500)) end
     end
     
     if AutoFarmActive then local hum = c:FindFirstChildOfClass("Humanoid"); local hunger = c:FindFirstChild("Hunger") if hunger and hum and hunger.Value <= 0 and hum.Health > 0 and not IsForceRespawn then IsForceRespawn = true; hum.Health = 0 end end 
@@ -85,144 +87,142 @@ Player.CharacterAdded:Connect(function() SpawnTime = tick(); IsForceRespawn = fa
 local vu = game:GetService("VirtualUser"); game:GetService("Players").LocalPlayer.Idled:Connect(function() vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame); task.wait(1); vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame) end)
 repeat task.wait() until game:IsLoaded()
 
-local P,R,T,S,V=game:GetService("Players"),game:GetService("RunService"),game:GetService("TextChatService"),game:GetService("StarterGui"),game:GetService("VirtualInputManager")
-local L=P.LocalPlayer
+local P, R, T, S, V = game:GetService("Players"), game:GetService("RunService"), game:GetService("TextChatService"), game:GetService("StarterGui"), game:GetService("VirtualInputManager")
+local L = P.LocalPlayer
 repeat task.wait() until L
 
-local E,TG,BV=false,nil,nil
-local NF,HF,TPD=250,500,18
+local E, TG, BV = false, nil, nil
+local W = {} 
+local NF, HF, TPD = 250, 500, 18
 
-local function N(a,b)
-	pcall(function()
-		S:SetCore("SendNotification",{Title=a,Text=b,Duration=3})
-	end)
+-- Hook Metatable để chặn tương tác với Whitelist
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+local old = mt.__namecall
+mt.__namecall = newcclosure(function(self, ...)
+    local m = getnamecallmethod()
+    local a = { ... }
+    if m == "FireServer" or m == "InvokeServer" then
+        for _, p in pairs(W) do
+            if p and p.Character then
+                for _, v in pairs(a) do
+                    if v == p or v == p.Character or (type(v) == "table" and rawget(v, "Instance") == p.Character) then
+                        return nil
+                    end
+                end
+            end
+        end
+    end
+    return old(self, ...)
+end)
+setreadonly(mt, true)
+
+local function N(a, b)
+    pcall(function() S:SetCore("SendNotification", {Title = a, Text = b, Duration = 3}) end)
 end
 
-local function Tap(x,y)
-	V:SendTouchEvent(0,Enum.UserInputState.Begin,x,y)
-	V:SendTouchEvent(0,Enum.UserInputState.End,x,y)
+local function Tap(x, y)
+    V:SendTouchEvent(0, Enum.UserInputState.Begin, x, y)
+    V:SendTouchEvent(0, Enum.UserInputState.End, x, y)
 end
 
 local function Setup()
-	local C=L.Character
-	local H=C and C:FindFirstChild("HumanoidRootPart")
-	if not H then return end
-	if BV then BV:Destroy() end
-	BV=Instance.new("BodyVelocity",H)
-	BV.MaxForce=Vector3.new(9e9,9e9,9e9)
+    local C = L.Character
+    local H = C and C:FindFirstChild("HumanoidRootPart")
+    if not H then return end
+    if BV then BV:Destroy() end
+    BV = Instance.new("BodyVelocity", H)
+    BV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
 end
 
 local function Find(n)
-	n=n and n:lower()
-	for _,p in ipairs(P:GetPlayers()) do
-		if p~=L and (p.Name:lower():find(n) or p.DisplayName:lower():find(n)) then
-			return p
-		end
-	end
+    n = n and n:lower()
+    for _, p in ipairs(P:GetPlayers()) do
+        if p ~= L and (p.Name:lower():find(n) or p.DisplayName:lower():find(n)) then
+            return p
+        end
+    end
 end
 
-local function Cmd(m)
-	local a=m:split(" ")
-	if a[1]:lower()~=";wander" then return end
-
-	if a[2] and a[2]:lower()=="rage" then
-		local p=Find(a[3])
-		if p then
-			TG,E=p,true
-			Setup()
-			N("WANDER RAGE","Target: "..p.DisplayName)
-		end
-	elseif a[2] and a[2]:lower()=="unrage" then
-		E,TG=false,nil
-		if BV then BV:Destroy() BV=nil end
-		N("WANDER RAGE","Disabled")
-	end
-end
-
+-- Xử lý lệnh qua chat
 T.MessageReceived:Connect(function(m)
-	local s=m.TextSource
-	if s and P:GetPlayerByUserId(s.UserId)==L then
-		Cmd(m.Text)
-	end
+    local s = m.TextSource
+    if s and P:GetPlayerByUserId(s.UserId) == L then
+        local a = m.Text:split(" ")
+        if a[1]:lower() == ";wander" then
+            local cmd = a[2] and a[2]:lower()
+            if cmd == "rage" then
+                local p = Find(a[3])
+                if p then TG, E = p, true Setup() N("WANDER RAGE", "Target: " .. p.DisplayName) end
+            elseif cmd == "unrage" then
+                E, TG = false, nil
+                if BV then BV:Destroy() BV = nil end
+                N("WANDER RAGE", "Disabled")
+            elseif cmd == "bv" then
+                local p = Find(a[3])
+                if p and not table.find(W, p) then table.insert(W, p) N("WHITELIST", "Added: " .. p.DisplayName) end
+            elseif cmd == "unbv" then
+                local p = Find(a[3])
+                for i, v in pairs(W) do if v == p then table.remove(W, i) N("WHITELIST", "Removed: " .. p.DisplayName) break end end
+            end
+        end
+    end
 end)
 
-L.CharacterAdded:Connect(function()
-	task.wait(1)
-	if E then Setup() end
-end)
-
-R.Heartbeat:Connect(function()
-	if E and not BV then Setup() end
-end)
-
+-- Vòng lặp chính
+L.CharacterAdded:Connect(function() task.wait(1) if E then Setup() end end)
+R.Heartbeat:Connect(function() if E and not BV then Setup() end end)
 R.Stepped:Connect(function()
-	if not E then return end
-	local C=L.Character
-	if not C then return end
-	for _,v in ipairs(C:GetDescendants()) do
-		if v:IsA("BasePart") then v.CanCollide=false end
-	end
+    if not E then return end
+    local C = L.Character
+    if C then for _, v in ipairs(C:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end end
 end)
 
 task.spawn(function()
-	while true do
-		task.wait(.08)
-		if E and TG then
-			local R1=L.Character and L.Character:FindFirstChild("HumanoidRootPart")
-			local R2=TG.Character and TG.Character:FindFirstChild("HumanoidRootPart")
-			if R1 and R2 and (R1.Position-R2.Position).Magnitude<25 then
-				Tap(825,315)
-				task.wait(.02)
-				Tap(895,315)
-			end
-		end
-	end
+    while true do
+        task.wait(.08)
+        if E and TG then
+            local R1 = L.Character and L.Character:FindFirstChild("HumanoidRootPart")
+            local R2 = TG.Character and TG.Character:FindFirstChild("HumanoidRootPart")
+            if R1 and R2 and (R1.Position - R2.Position).Magnitude < 25 then
+                Tap(825, 315) task.wait(.02) Tap(895, 315)
+            end
+        end
+    end
 end)
 
 R.Heartbeat:Connect(function()
-	local C=L.Character
-	local H=C and C:FindFirstChild("HumanoidRootPart")
-	local HM=C and C:FindFirstChildOfClass("Humanoid")
-	if not(H and HM) then return end
+    local C = L.Character
+    local H = C and C:FindFirstChild("HumanoidRootPart")
+    local HM = C and C:FindFirstChildOfClass("Humanoid")
+    if not (H and HM) then return end
 
-	if HM.JumpPower==0 then
-		if BV then
-			local Y=H.Position.Y
-			for i=1,6 do
-				task.wait(.03)
-				local D=Vector3.new(math.random(-100,100)/100,.8,math.random(-100,100)/100)
-				if D.Magnitude<.1 then D=Vector3.new(0,1,0) end
-				D=D.Unit
-				if H.Position.Y-Y>50 then
-					D=Vector3.new(D.X,-.6,D.Z).Unit
-				end
-				BV.Velocity=D*500
-			end
-		end
-		return
-	end
+    if HM.JumpPower == 0 and BV then
+        local Y = H.Position.Y
+        for i = 1, 6 do
+            task.wait(.03)
+            local D = Vector3.new(math.random(-100, 100) / 100, .8, math.random(-100, 100) / 100).Unit
+            if H.Position.Y - Y > 50 then D = Vector3.new(D.X, -.6, D.Z).Unit end
+            BV.Velocity = D * 500
+        end
+        return
+    end
 
-	if E and TG and BV then
-		local TCH=TG.Character
-		local TR=TCH and TCH:FindFirstChild("HumanoidRootPart")
-		if not TR then return end
-
-		local Dist=(H.Position-TR.Position).Magnitude
-		local Dir=(TR.Position-H.Position)
-		if Dir.Magnitude<.1 then Dir=Vector3.new(0,.1,0) end
-		Dir=Dir.Unit
-
-		if Dist>TPD then
-			BV.Velocity=Dir*((Dist<40 and NF) or HF)
-		else
-			BV.Velocity=Vector3.zero
-			H.CFrame=TR.CFrame*CFrame.new(
-				math.cos(tick()*220)*10,
-				math.sin(tick()*150)*5
-				math.sin(tic
-			)
-		end
-	end
+    if E and TG and BV then
+        local TCH = TG.Character
+        local TR = TCH and TCH:FindFirstChild("HumanoidRootPart")
+        if TR then
+            local Dist = (H.Position - TR.Position).Magnitude
+            local Dir = (TR.Position - H.Position)
+            Dir = (Dir.Magnitude < .1 and Vector3.new(0, .1, 0) or Dir).Unit
+            if Dist > TPD then
+                BV.Velocity = Dir * ((Dist < 40 and NF) or HF)
+            else
+                BV.Velocity = Vector3.zero
+                H.CFrame = TR.CFrame * CFrame.new(math.cos(tick() * 220) * 10, math.sin(tick() * 150) * 5, math.sin(tick() * 220) * 10)
+            end
+        end
+    end
 end)
 
-N("SYSTEM","Wander Loaded.")
+N("WANDER", "System Loaded")

@@ -32,7 +32,7 @@ text.TextScaled = true
 text.TextTransparency = 1
 text.Parent = bg
 text.Text =
-"Fuck mày🖕"
+"ĐỌC LÀM CHÓ 😂"
 -- Hiện chữ mượt
 for i = 1,0,-0.05 do
 text.TextTransparency = i
